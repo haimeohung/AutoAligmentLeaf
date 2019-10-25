@@ -171,51 +171,57 @@ def distance(p0, p1):
 def distance_3d(p0, p1):
 	return math.sqrt((p0[0] - p1[0])**2 + (p0[1] - p1[1])**2 + (p0[2]-p1[2])**2)
 
-
+# Khởi tạo đồ thị
 def gen_graph(I,SP_list,hist_ob,hist_bg):
-	G=nx.Graph()
-	s=SPNode()
-	s.label='s'
-	t=SPNode()
-	t.label='t'
-	lambda_=.9
-	sig_=5
-	hist_ob_sum=int(hist_ob.sum())
-	hist_bg_sum=int(hist_bg.sum())
+	G = nx.Graph()
+	s = SPNode()
+	s.label = 's'
+	t = SPNode()
+	t.label = 't'
+	lambda_ = .9
+	sig_ = 5
+	hist_ob_sum = int(hist_ob.sum())
+	hist_bg_sum = int(hist_bg.sum())
 
 	for u in SP_list:
-		K=0
-		region_rad=math.sqrt(len(u.pixels)/math.pi)
+		K = 0
+		# Tính bán kính của SP, len(SP) = piR^2 -> R^2 = len(SP) / pi
+		region_rad = math.sqrt(len(u.pixels)/math.pi)
 		for v in SP_list:
 			if u != v:
+				# Định nghĩa neighbor của u, trong phạm vi 1d -> 2.5d của u
 				if distance(u.centroid, v.centroid) <= 2.5*region_rad:
-					sim=math.exp(-(cv2.compareHist(u.lab_hist,v.lab_hist,3)**2/2*sig_**2))*(1/distance(u.centroid, v.centroid))
-					K+=sim
-					G.add_edge(u, v, sim=sim)
-		if(u.type=='na'):
-			l_,a_,b_=[int(x) for x in u.mean_lab]
-			l_i=int(l_//((l_range[1]-l_range[0])/lab_bins[0]))
-			a_i=int(a_//((a_range[1]-a_range[0])/lab_bins[1]))
-			b_i=int(b_//((b_range[1]-b_range[0])/lab_bins[2]))
-			pr_ob=int(hist_ob[l_i,a_i,b_i])/hist_ob_sum
-			pr_bg=int(hist_bg[l_i,a_i,b_i])/hist_bg_sum
-			sim_s=100000
-			sim_t=100000
+					# Tính độ tương đồng - trọng số của cạnh giữa 2 node
+					sim = math.exp(-(cv2.compareHist(u.lab_hist,v.lab_hist, 3)**2/2*sig_**2))*(1/distance(u.centroid, v.centroid))
+					K += sim
+					# Thêm cạnh giữa u và v
+					G.add_edge(u, v, sim = sim)
+		if(u.type == 'na'):
+			# Xác suất u nằm trong ob hay bg
+			l_,a_,b_ = [int(x) for x in u.mean_lab]
+			l_i = int(l_//((l_range[1]-l_range[0])/lab_bins[0]))
+			a_i = int(a_//((a_range[1]-a_range[0])/lab_bins[1]))
+			b_i = int(b_//((b_range[1]-b_range[0])/lab_bins[2]))
+			pr_ob = int(hist_ob[l_i,a_i,b_i])/hist_ob_sum
+			pr_bg = int(hist_bg[l_i,a_i,b_i])/hist_bg_sum
+			sim_s = 100000
+			sim_t = 100000
 			if pr_bg > 0:
-				sim_s=lambda_*-np.log(pr_bg)
+				sim_s = lambda_ * -np.log(pr_bg)
 			if pr_ob > 0:
-				sim_t=lambda_*-np.log(pr_ob)
-			G.add_edge(s, u, sim=sim_s)
-			G.add_edge(t, u, sim=sim_t)
-		if(u.type=='ob'):
-			G.add_edge(s, u, sim=1+K)
-			G.add_edge(t, u, sim=0)
-		if(u.type=='bg'):
-			G.add_edge(s, u, sim=0)
-			G.add_edge(t, u, sim=1+K)		
+				sim_t = lambda_ * -np.log(pr_ob)
+			G.add_edge(s, u, sim = sim_s)
+			G.add_edge(t, u, sim = sim_t)
+		if(u.type == 'ob'):
+			G.add_edge(s, u, sim = 1 + K)
+			G.add_edge(t, u, sim = 0)
+		if(u.type == 'bg'):
+			G.add_edge(s, u, sim = 0)
+			G.add_edge(t, u, sim = 1 + K)		
 	return G
 
 def main():
+	# 1. Nhập ảnh
 	global I,mode,I_dummy
 
 	inputfile = ''
@@ -231,11 +237,10 @@ def main():
 		elif opt in ("-i", "--input-image"):
 			inputfile = arg
 	print('Using image: ', inputfile)
-
 	I = cv2.imread (inputfile) #imread wont rise exceptions by default
 	I_dummy=np.zeros(I.shape)
 	I_dummy=np.copy(I)
-	
+	# 2. Đánh dấu object và background
 	h,w,c=I.shape
 	region_size=20
 	cv2.namedWindow('Mark the object and background')
@@ -250,12 +255,12 @@ def main():
 		elif k == 27:
 			break
 	cv2.destroyAllWindows()
-	
+	# 3. Convert RGB sang LAB
 	I_lab = cv2.cvtColor(I, cv2.COLOR_BGR2Lab)
 	SP = gen_sp_slic(I, region_size)
 	SP_labels = SP.getLabels()
 	SP_list=[None for each in range(SP.getNumberOfSuperpixels())]
-
+	# 4. Gán nhãn
 	for i in range(h):
 		for j in range(w):
 			if not SP_list[SP_labels[i][j]]:
@@ -310,23 +315,23 @@ def main():
 			s=each
 		if each.label=='t':
 			t=each
-
-	RG=boykov_kolmogorov.boykov_kolmogorov(G, s, t, capacity='sim')
+	# 5. Min cut / Max flow
+	RG = boykov_kolmogorov.boykov_kolmogorov(G, s, t, capacity = 'sim')
 	source_tree, target_tree = RG.graph['trees']
 	partition = (set(source_tree), set(G) - set(source_tree))
-	F=np.zeros((h,w),dtype=np.uint8)
+	F = np.zeros((h,w), dtype = np.uint8)
 	for sp in partition[0]:
 		for pixels in sp.pixels:
 			i,j=pixels
 			F[i][j]=1
-	Final=cv2.bitwise_and(I,I,mask = F)
+	Final = cv2.bitwise_and(I,I,mask = F)
 
 	sp_lab=np.zeros(I.shape,dtype=np.uint8)
 	for sp in SP_list:
 		for pixels in sp.pixels:
 			i,j=pixels
-			sp_lab[i][j]=sp.mean_lab
-	sp_lab=cv2.cvtColor(sp_lab, cv2.COLOR_Lab2RGB)
+			sp_lab[i][j] = sp.mean_lab
+	sp_lab = cv2.cvtColor(sp_lab, cv2.COLOR_Lab2RGB)
 	
 	plt.subplot(2,2,1)
 	plt.tick_params(labelcolor='black', top='off', bottom='off', left='off', right='off')
@@ -345,13 +350,10 @@ def main():
 	plt.axis("off")
 	plt.xlabel("Super-pixel representation")
 
-
 	plt.subplot(2,2,4)
 	plt.imshow(Final[...,::-1])
 	plt.axis("off")
 	plt.xlabel("Output Image")
-
-
 
 	cv2.imwrite("out.png",Final)
 	plt.show()

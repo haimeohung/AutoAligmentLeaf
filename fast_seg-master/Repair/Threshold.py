@@ -20,9 +20,12 @@ if __name__ == "__main__":
     # read color image with grayscale flag: "cv2.IMREAD_GRAYSCALE"
     img_grayscale = cv2.imread(input_image_path, cv2.IMREAD_GRAYSCALE)       # shape: (960, 960)
     # print grayscale image
+   
     cv2.imwrite('grey_%s' % input_image_path, img_grayscale)
     print('Saved grayscale image @ grey_%s' % input_image_path)
     
     img_binary = convert_to_binary(img_grayscale)
     cv2.imwrite('binary_%s' % input_image_path, img_binary)
     print('Saved binary image @ binary_%s' % input_image_path)
+    cv2.imshow('aa', img_binary)
+    cv2.waitKey(0)

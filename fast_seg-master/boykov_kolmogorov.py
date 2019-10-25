@@ -169,6 +169,7 @@ def boykov_kolmogorov(G, s, t, capacity='capacity', residual=None,
 
 
 
+
 def boykov_kolmogorov_impl(G, s, t, capacity, residual, cutoff):
     if s not in G:
         raise nx.NetworkXError('node %s not in graph' % str(s))
