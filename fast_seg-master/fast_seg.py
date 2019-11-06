@@ -306,10 +306,8 @@ def main():
 		mask_bg[i][j]=255
 
 	hist_ob=cv2.calcHist([I_lab],[0,1,2],mask_ob,lab_bins,l_range+a_range+b_range)
-
 	hist_bg=cv2.calcHist([I_lab],[0,1,2],mask_bg,lab_bins,l_range+a_range+b_range)
 	G=gen_graph(I_lab,SP_list,hist_ob,hist_bg)
-
 	for each in G.nodes():
 		if each.label=='s':
 			s=each
@@ -325,7 +323,8 @@ def main():
 			i,j=pixels
 			F[i][j]=1
 	Final = cv2.bitwise_and(I,I,mask = F)
-
+	
+	
 	sp_lab=np.zeros(I.shape,dtype=np.uint8)
 	for sp in SP_list:
 		for pixels in sp.pixels:
@@ -351,6 +350,7 @@ def main():
 	plt.xlabel("Super-pixel representation")
 
 	plt.subplot(2,2,4)
+	Final[np.where((Final==[0,0,0]).all(axis=2))] = [255,255,255]
 	plt.imshow(Final[...,::-1])
 	plt.axis("off")
 	plt.xlabel("Output Image")
