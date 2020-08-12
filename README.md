@@ -1,18 +1,15 @@
-# AutoAligmentLeaf
-Tìm contour, trong AutoAlgment -> detect symmetry, trong hàm auto_rotate, dòng contour = max(contours, key = cv2.contourArea) là contour to nhất bao quanh object. Muốn lấy thằng này, sửa lại thành:
+# Segmentation (without DNN)
 
-return img_rgb, drawing, ellipse[2], contour
+![Untitled](https://user-images.githubusercontent.com/43202025/90032402-8b8cb800-dce8-11ea-9c6d-cf9f348113a7.png)
 
-Chỗ trả về sửa lại thành:
+![4](https://user-images.githubusercontent.com/43202025/90032674-d6a6cb00-dce8-11ea-9046-b90b377c2ea9.png)
 
-img_rgb, drawing, corner, contour = auto_rotate(img)
+![3](https://user-images.githubusercontent.com/43202025/90032696-dc9cac00-dce8-11ea-8c54-fb4cc5c69185.png)
 
-Thực thi: trong terminal gõ tên file là tự chạy
+# Auto Aligment Leaf
 
-Package: opencv-contrib
+![1](https://user-images.githubusercontent.com/43202025/90032682-d9092500-dce8-11ea-9e70-d51dcaf9a914.png)
 
-         opencv
-         
-         matplotlib
-         
-         numpy
+![2](https://user-images.githubusercontent.com/43202025/90032691-dad2e880-dce8-11ea-9572-a2aff3ad7dfd.png)
+
+Configuration: install all packages in list [opencv-contrib, opencv, matplotlib, numpy].
